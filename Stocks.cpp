@@ -199,7 +199,66 @@ TradeInfo compare(TradeInfo a, TradeInfo b)
         return b;
     }
 
+// Problem -2 ALG-5 - Brute force - O(m * n^2k)
+TradeInfo task2_bruteforce_recursive(vector<vector<int>> A, vector<vector<int>> &max, vector<vector<int>> &stockIndex, int n, int k, int currStock)  {
 
+        if(k == 0)
+            {
+                TradeInfo a;
+                a.comb = "";
+                return a ;
+            }
+
+        TradeInfo currProfit;
+        for(int i = 1; i <= n; i++) {
+            string pathTraversal = "";
+            for (int j = i - 1; j >= 0; j--) {
+                TradeInfo temp;
+                // checking for sell price - buy price for kth transaction
+                int t = A[currStock][i] - A[currStock][j];
+                if (t > max[j][i]) {
+                    max[j][i] = t;
+                    stockIndex[j][i] = currStock;
+                }
+
+                if(max[j][i] > 0)
+                    pathTraversal = to_string(stockIndex[j][i]+1) + " " + to_string(j+1) + " " + to_string(i+1);
+
+                // Problem solved from index j till i for kth transaction (for each j and i iteratively for each stock) - left with k-1 transactions
+                TradeInfo nextSubProb = task2_bruteforce_recursive(A, max, stockIndex, j, k - 1, currStock);
+                temp.profit += nextSubProb.profit + max[j][i];
+
+                if(pathTraversal == "" && nextSubProb.comb == ""){
+                    temp.comb = "";
+                }
+                else if(pathTraversal == "" && nextSubProb.comb != ""){
+                    temp.comb = nextSubProb.comb ;
+                }
+                else if(pathTraversal != "" && nextSubProb.comb == ""){
+                    temp.comb = pathTraversal;
+                }
+                else {
+                    temp.comb = pathTraversal + "\n" + nextSubProb.comb;
+                }
+                currProfit = compare(temp, currProfit);
+            }
+        }
+        return currProfit;
+    }
+
+TradeInfo task2_bruteforce(vector<vector<int>> A, vector<vector<int>> &max, vector<vector<int>> &stockIndex, int k) {
+
+        TradeInfo maxProfit;
+        int n = A[0].size();
+
+        //Looping over m days 
+        for(int i = 0; i < A.size(); i++){
+            maxProfit = compare(maxProfit, task2_bruteforce_recursive(A, max, stockIndex, n-1, k, i));
+        }
+
+        return maxProfit;
+
+    }
 
 //Problem -2 ALG5 -Bottom Up DP solution of O(m * n^2 * k) time complexity
 void task2_dp_bottomup(vector<vector<int>> A, int k){
@@ -560,7 +619,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     task1_bruteforce(A);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "2"){
@@ -571,7 +635,13 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     task1_greedy(A);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
+    
     }
 
     if (cmd == "3a"){
@@ -582,7 +652,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     cout<<task1_topdown(A, m-1, n-1, -1, n-1, m-1, 0, 0, n-1, n-1);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "3b"){
@@ -593,7 +668,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     task1_dp_bottomup(A);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "4"){
@@ -605,7 +685,18 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
-//  task2_bruteforce(A);
+    auto start = chrono::high_resolution_clock::now();
+    
+    vector<vector<int>> max(n, vector<int>(n));
+    vector<vector<int>> stockIndex(n, vector<int>(n));
+    TradeInfo sol3 = task2_bruteforce(A, max, stockIndex, k);
+    cout << sol3.comb;
+    cout << endl << sol3.profit;    
+
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "5"){
@@ -617,7 +708,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     task2_dp_bottomup(A, k);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "6a"){
@@ -629,9 +725,15 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     unordered_map<string, TradeInfo> memo; 
     TradeInfo sol3 = task2_dp_topdown(A, 0, k, false, memo, 0, 0,-1);
-    cout << sol3.comb;
+    cout << sol3.comb << endl;
+    cout << sol3.profit;
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "6b"){
@@ -643,7 +745,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     task2_dp_bottomup_optimized(A,k);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "7"){
@@ -655,7 +762,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
 //    task3_bruteforce(A,c);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "8"){
@@ -667,7 +779,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
     task3_dp_bottomup(A,c);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "9a"){
@@ -679,7 +796,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
 //    task3_dp_topdown(A,c);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
     if (cmd == "9b"){
@@ -691,7 +813,12 @@ int main(int argc, char **argv) {
             cin >> A[i][j];
         }
     }
+    auto start = chrono::high_resolution_clock::now();
 //    task3_dp_bottomup_optimized(A,c);
+    auto stop = chrono::high_resolution_clock::now();
+    auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << endl << "Time taken: "
+         << timeTaken.count() << " microseconds" << endl;
     }
 
 }

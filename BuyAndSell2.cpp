@@ -8,12 +8,23 @@ struct TradeInfo {
     int sellDay = 0;
 };
 
-// Custom comparator to compare which path/ transactions yield best profit
+// Custom comparator to compare which path/ transactions yield best profit -> used in tpdown DP
 TradeInfo compare(TradeInfo a, TradeInfo b)
     {
         // If values are the same then
         // return true
         if (a.profit >= b.profit) {
+            return a;
+        }
+        return b;
+    }  
+
+// Custom comparator to compare which path/ transactions yield best profit -> used in brute force
+TradeInfo stockCompare(TradeInfo a, TradeInfo b)
+    {
+        // If values are the same then
+        // return true
+        if (a.profit > b.profit) {
             return a;
         }
         return b;
@@ -267,35 +278,70 @@ TradeInfo task2_dp_topdown(vector<vector<int>> A, int i, int k, bool buy, unorde
         return memo[key];
     }
 
-// public int maximizeProfitP4(int[][] arr, int i, int k, boolean buy, HashMap<String, Integer> memo, int stock, int prevStock) {
-//         if (i >= arr[0].length || k == 0 || stock >= arr.length || stock < 0) return 0;
-//             String key = String.format("%s-%s-%s-%s", i, k, buy, stock);
-//             if(!memo.containsKey(key)) {
-//                 subProblems++;  
-//                 int profit = this.maximizeProfitP4(arr, i + 1, k, buy, memo, stock, -1);
-//                 if (buy) {
-//                     int ps = this.maximizeProfitP4(arr, i, k - 1, false, memo, stock, -1);
-//                     int pu = this.maximizeProfitP4(arr, i, k - 1, false, memo, stock + 1, -1);
-//                     int pd = this.maximizeProfitP4(arr, i, k - 1, false, memo, stock - 1, -1);
-//                     profit = Math.max(profit, Math.max(Math.max(ps, pu), pd) + arr[stock][i]);
+TradeInfo task2_bruteforce_recursive(vector<vector<int>> A, vector<vector<int>> &max, vector<vector<int>> &stockIndex, int n, int k, int currStock)  {
 
-//                 } else {
+        if(k == 0)
+            {
+                TradeInfo a;
+                a.comb = "";
+                return a ;
+            }
 
-//                     int ps = this.maximizeProfitP4(arr, i + 1, k, true, memo, stock, -1);
-//                     int pu = 0;
-//                     int pd = 0;
-//                     if(prevStock != stock + 1)
-//                         pu = this.maximizeProfitP4(arr, i, k, false, memo, stock + 1, -1);
-//                     if(prevStock != stock - 1)
-//                         pd = this.maximizeProfitP4(arr, i, k, false, memo, stock-1, stock);
-//                     profit = Math.max(profit, ps - arr[stock][i]);
-//                     profit = Math.max(profit, pu);
-//                     profit = Math.max(profit, pd);
-//                 }
-//                 memo.put(key, profit);
-//             }
-//             return memo.get(key);
-//     }
+        TradeInfo currProfit;
+        for(int i = 1; i <= n; i++) {
+            string pathTraversal = "";
+            for (int j = i - 1; j >= 0; j--) {
+                TradeInfo temp;
+                // checking for sell price - buy price for kth transaction
+                int t = A[currStock][i] - A[currStock][j];
+                if (t > max[j][i]) {
+                    max[j][i] = t;
+                    stockIndex[j][i] = currStock;
+                }
+
+                if(max[j][i] > 0)
+                    pathTraversal = to_string(stockIndex[j][i]+1) + " " + to_string(j+1) + " " + to_string(i+1);
+
+                // Problem solved from index j till i for kth transaction (for each j and i iteratively for each stock) - left with k-1 transactions
+                TradeInfo nextSubProb = task2_bruteforce_recursive(A, max, stockIndex, j, k - 1, currStock);
+                temp.profit += nextSubProb.profit + max[j][i];
+
+                // temp.comb = comb + ((sub.comb != "")?( ((comb == "")?"":",") + sub.comb):"");
+                if(pathTraversal == "" && nextSubProb.comb == ""){
+                    temp.comb = "";
+                }
+                else if(pathTraversal == "" && nextSubProb.comb != ""){
+                    temp.comb = nextSubProb.comb ;
+                }
+                else if(pathTraversal != "" && nextSubProb.comb == ""){
+                    temp.comb = pathTraversal;
+                }
+                else {
+                    temp.comb = pathTraversal + "\n" + nextSubProb.comb;
+                }
+                //temp.comb = pathTraversal + ((nextSubProb.comb != "")?(","+nextSubProb.comb):"");
+                //temp.comb = pathTraversal + ((nextSubProb.comb != "")?( ((pathTraversal  == "" ) ? "": ",") + nextSubProb.comb):"");
+                currProfit = compare(temp, currProfit);
+                // cout << "t is :: " << temp.comb << endl;
+            }
+        }
+        return currProfit;
+    }
+
+TradeInfo task2_bruteforce(vector<vector<int>> A, vector<vector<int>> &max, vector<vector<int>> &stockIndex, int k) {
+
+        TradeInfo maxProfit;
+       // int[][] mToS = new int[prices[0].length][prices[0].length];
+       int n = A[0].size();
+
+        //Looping over m days 
+        for(int i = 0; i < A.size(); i++){
+            maxProfit = compare(maxProfit, task2_bruteforce_recursive(A, max, stockIndex, n-1, k, i));
+        }
+
+        return maxProfit;
+
+    }
 
 
 // void task3_bottomup_optimized(vector<vector<int>> A )  {
@@ -317,8 +363,8 @@ int main(int argc, char **argv) {
     // cout<< "Enter m and n:";
     // cin >> m >> n;       
     m = 4;
-    n =4;
-    k =3;
+    n =8;
+    k =2;
     vector<vector<int>> A(m, vector<int>(n));
     // for (int i = 0; i < m; i++) {
     //     for (int j = 0; j < n; j++) {
@@ -326,34 +372,41 @@ int main(int argc, char **argv) {
     //     }
     // }
 
-//     A = {{12, 14, 17, 10, 14, 13, 12, 15},   
-// {100, 30, 15, 10, 8, 25, 80, 65},
-// {125, 115, 100, 10, 85, 75, 65, 55},
-// {10 ,22, 5 ,75 ,65 ,80 ,90, 102}};
+    A = {{12, 14, 17, 10, 14, 13, 12, 15},   
+{100, 30, 15, 10, 8, 25, 80, 65},
+{125, 115, 100, 10, 85, 75, 65, 55},
+{10 ,22, 5 ,75 ,65 ,80 ,90, 102}};
 
 // A = {{1,4,8} , {3,2,6}};
 
-A = {{12, 14, 10, 9},   
-{100, 30, 15, 10},
-{125, 115, 100, 10},
-{100 ,22, 20, 21}};
+// A = {{12, 14, 10, 9},
+// {100, 30, 15, 10},
+// {125, 115, 100, 10},
+// {100 ,22, 20, 21}};
 
     // int cmd = stoi(argv[1]);
     // switch (cmd) {
     //     case 1:
-         //   task2_dp_bottomup_optimized(A, k);
+            //task2_dp_bottomup_optimized(A, k);
             // break;
         // case 2:
            // task2_dp_bottomup(A, k);
         //     break;
         // case 3:
 
-            unordered_map<string, TradeInfo> memo; 
-                TradeInfo sol3 = task2_dp_topdown(A, 0, k, false, memo, 0, 0,-1);
-                cout << sol3.comb;
-        //     break;
+            // unordered_map<string, TradeInfo> memo; 
+            //     TradeInfo sol3 = task2_dp_topdown(A, 0, k, false, memo, 0, 0,-1);
+            //     cout << sol3.comb;
+         //   break;
         // case 4:
-        //     task4_smart(p, m, n, h);
+                vector<vector<int>> max(n, vector<int>(n));
+                vector<vector<int>> stockIndex(n, vector<int>(n));
+                TradeInfo sol3 = task2_bruteforce(A, max, stockIndex, k);
+                cout << sol3.comb;
+                cout << endl << sol3.profit;
+
+        //         System.out.println(profit.profit);
+        // System.out.println(string.join("\n", profit.comb.split(",")));
         //     break;
         // case 5:
         //     task5_smart(p, m, n, h);

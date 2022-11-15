@@ -142,6 +142,7 @@ while(dp[2*index +1][y-1] == dp[2*index +1][y]){
 total += maxi;
 sellTime = y;
 buyTime = find(dp, A,index,y, c);
+if(buyTime > 0 && sellTime > 0)
 cout << index+1 << " " << buyTime << " " << sellTime << " "<<endl;
 sellTime = buyTime-c-1;
 }
@@ -380,7 +381,7 @@ int main(int argc, char **argv) {
     // cout<< "Enter m and n:";
     // cin >> m >> n;       
     m = 2;
-    n =5;
+    n =10;
     c =0;
     vector<vector<int>> A(m, vector<int>(n));
     // for (int i = 0; i < m; i++) {
@@ -401,15 +402,18 @@ int main(int argc, char **argv) {
 // {100, 30, 15, 10},
 // {125, 115, 100, 10},
 // {100 ,22, 15, 9}};
-A= { {1,2,3,0,2}, {5,4,3,2,10}};
+// A= { {1,2,3,0,2}, {5,4,3,2,10}};
+
+A = {{14, 10, 10, 6, 2, 12, 11, 4, 5, 9},
+                               {14, 13, 14, 2, 8, 8,  4, 14, 6, 5}};
 
     // int cmd = stoi(argv[1]);
     // switch (cmd) {
     //     case 1:
-            task3_dp_bottomup_optimized(A, c);
+         //   task3_dp_bottomup_optimized(A, c);
             // break;
         // case 2:
-            // task3_dp_bottomup(A, c);
+             task3_dp_bottomup(A, c);
         //     break;
         // case 3:
         //     task1_dp_topdown(A);
