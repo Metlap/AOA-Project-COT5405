@@ -98,7 +98,7 @@ for(int j = 0; j<m ; j++){
         }
 
 }
-  cout << globalProfit << endl;
+ // cout << globalProfit << endl;
   cout << stockIndex  << " " << buyIndex+1 << " " << sellIndex+1;
 }
 
@@ -182,27 +182,27 @@ string recursive_memoization(vector<vector<int>> A, int m, int n, int max_diff, 
 
 int main(int argc, char **argv) {
     int m, n;
-  //  cin >> m >> n;
+ //   cin >>m>>n;
   m =4;
   n =8;
 
   vector<vector<int>> A(m, vector<int>(n));
 
-//   A = {{12, 14, 10, 9},   
-// {100, 30, 15, 10},
-// {125, 115, 100, 10},
-// {100 ,22, 15, 9}};
+  A = {{12, 14, 10, 9},   
+{100, 30, 15, 10},
+{125, 115, 100, 10},
+{100 ,22, 15, 9}};
 
-      A = {{12, 14, 17, 10, 14, 13, 12, 15},   
-{100, 30, 15, 10, 8, 25, 80, 65},
-{125, 115, 100, 10, 85, 75, 65, 55},
-{10 ,22, 5 ,75 ,65 ,80 ,90, 102}};
+//       A = {{12, 14, 17, 10, 14, 13, 12, 15},   
+// {100, 30, 15, 10, 8, 25, 80, 65},
+// {125, 115, 100, 10, 85, 75, 65, 55},
+// {10 ,22, 5 ,75 ,65 ,80 ,90, 102}};
 
-    // for (int i = 0; i < m; i++) {
-    //     for (int j = 0; j < n; j++) {
-    //         cin >> A[i][j];
-    //     }
-    // }
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            cin >> A[i][j];
+        }
+    }
     // int cmd = stoi(argv[1]);
     // switch (cmd) {
     //     case 1:

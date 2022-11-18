@@ -1,6 +1,41 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+int maximizeProfitS1(vector<vector<int>> A,int c,vector<int> &opt, vector<string> &store, int &count){
+    
+    for (int v = 0; v < A.size(); v++) {
+                opt[0] = 0;
+            int t = A[v][1] - A[v][0];
+            if(t > opt[1])
+                store[1] = to_string(v) + " " + to_string(0) + " " + to_string(1);
+            opt[1] = max(A[v][1] - A[v][0], opt[1]);
+
+            for (int i = 2; i < A[0].size(); i++) {
+                if(opt[i-1] > opt[i])
+                    store[i] = store[i-1];
+
+                opt[i] = max(opt[i], opt[i - 1]);
+
+                for (int j = 0; j < i; j++) {
+                    int prevProfit = j >= (c + 1) ? opt[j - (c + 1)] : 0;
+                    t = A[v][i] - A[v][j];
+                    if(t+prevProfit > opt[i])
+                        store[i] = to_string(v) + " " + to_string(j) + " " + to_string(i) + ((j >= (c + 1))?((store[j-(c+1)] != "" )? ("\n" + store[j-(c+1)]): "" ):"") ;
+
+
+                    opt[i] = max(opt[i], t + prevProfit);
+                }
+                // cout << to_string(v) + " " + to_string(i) + " " + to_string(opt[i]);
+            }
+        }
+        cout << store[A[0].size()-1];
+        // System.out.println(String.join("\n", store[stockPrices[0].length-1].split(",")));
+        if(count > 0)
+            return opt[A[0].size() - 1];
+        else
+            return maximizeProfitS1(A, c, opt, store, ++count);
+    }
+
 int find(vector<vector<int>> dp,vector<vector<int>> A,int index, int sellTime, int c){
 
     //int sellVal = A[index][sellTime-1];
@@ -129,22 +164,28 @@ while (sellTime > 0 && buyTime > 0 ){
 int maxi = 0;
 int index  = 0;
 int y =sellTime;
+
 for (int i = 0; i< stocks; i++){
     if (dp[(2*i) +1][y] > maxi){
+        
+      //  if(!(dp[(2*i) +1][y-c] >= dp[(2*i) +1][y] ) ){
         maxi = dp[2*i +1][y];
         index = i;
+      //  }
     }
 }
 
 while(dp[2*index +1][y-1] == dp[2*index +1][y]){
     y = y-1;
 }
-total += maxi;
+
 sellTime = y;
 buyTime = find(dp, A,index,y, c);
-if(buyTime > 0 && sellTime > 0)
+if(buyTime > 0 && sellTime > 0){
+total += maxi;
 cout << index+1 << " " << buyTime << " " << sellTime << " "<<endl;
-sellTime = buyTime-c-1;
+}
+sellTime = buyTime-c-1; 
 }
 cout<< endl;
 cout<< total;
@@ -405,7 +446,7 @@ int main(int argc, char **argv) {
 // A= { {1,2,3,0,2}, {5,4,3,2,10}};
 
 A = {{14, 10, 10, 6, 2, 12, 11, 4, 5, 9},
-                               {14, 13, 14, 2, 8, 8,  4, 14, 6, 5}};
+        {14, 13, 14, 2, 8, 8,  4, 14, 6, 5}};
 
     // int cmd = stoi(argv[1]);
     // switch (cmd) {
@@ -413,7 +454,18 @@ A = {{14, 10, 10, 6, 2, 12, 11, 4, 5, 9},
          //   task3_dp_bottomup_optimized(A, c);
             // break;
         // case 2:
-             task3_dp_bottomup(A, c);
+            //  task3_dp_bottomup(A, c);
+
+             cout << endl << "__________" << endl;
+
+            int count = 0;
+            vector<string> store(n);
+            vector<int> opt(n);
+            
+
+                maximizeProfitS1(A, c, opt, store, count);
+
+            
         //     break;
         // case 3:
         //     task1_dp_topdown(A);

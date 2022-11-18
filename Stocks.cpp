@@ -199,7 +199,7 @@ TradeInfo compare(TradeInfo a, TradeInfo b)
         return b;
     }
 
-// Problem -2 ALG-5 - Brute force - O(m * n^2k)
+// Problem -2 ALG-5 - Brute force - O(m * n^(2k))
 TradeInfo task2_bruteforce_recursive(vector<vector<int>> A, vector<vector<int>> &max, vector<vector<int>> &stockIndex, int n, int k, int currStock)  {
 
         if(k == 0)
@@ -265,16 +265,20 @@ void task2_dp_bottomup(vector<vector<int>> A, int k){
 
 int days = A[0].size();
 int stocks = A.size();
-
+  
+  // 2D DP array -> k+1*n+1 size
   vector<vector<int>> dp(k+1, vector<int> (days+1,-1));
+  //Arrays of k+1*n+1 size for storing the indices of stock, buy date and sell date
+  //for the n days and at most k transactions
   vector<vector<int>> stockIndex(k+1, vector<int> (days+1,-1));
   vector<vector<int>> buyIndex(k+1, vector<int> (days+1,-1));
   vector<vector<int>> sellIndex(k+1, vector<int> (days+1,-1));
 
+        // Base case - for 0 transactions -> profit = 0
         for (int j = 0; j <= days; j++){
             dp[0][j] = 0;
         }
-
+        //For day 0 -> no profit possible
         for (int i = 0; i <= k; i++){
             dp[i][0] = 0;
         }    
@@ -300,11 +304,13 @@ int stocks = A.size();
                        }
                     }
                   int temp =  maxFactor;
+                  // k transactions till j-1th day. Hence no sell operation on jth day
+                  //Comparing which is larger to fill DP array and set values for back tracking
                   if (maxFactor < dp[i][j - 1]){
                     temp = dp[i][j - 1];
                     sell = j;
                   }
-
+                  // Checking current profit with already filled value in DP. If greater fill with values corresponding to this transaction
                   if (temp > dp[i][j]){
                     dp[i][j] = temp;
                     stockIndex[i][j] = v+1;
@@ -315,13 +321,15 @@ int stocks = A.size();
 
             }
         }
-        cout << dp[k][days-1] << endl;
+        //Maximum profit possible
+       // cout << dp[k][days-1] << endl;
 
         // Traversing the DP array to get the indices of stocks and buy and sell dates
         int x = k;
         int y = days-1;
         while(k>0 && y>0 && dp[x][y] >= 0){
-
+            
+            // Checking if diagonally left left or just left starting from rightmost bottom corner of DP array
             while(dp[x][y-1] == dp[x][y]){
                 y--;  
             }
@@ -331,7 +339,8 @@ int stocks = A.size();
 
             if(y == buyIndex[x-1][y])
                 y--;    
-   
+
+            // Updating new sell date to buy date (since problem solved for last transaction (last buy date till last sell date))
             y = buyIndex[x][y];  
 
             if(index >0 && start>0 && end > 0 )  
@@ -369,7 +378,7 @@ TradeInfo task2_dp_topdown(vector<vector<int>> A, int i, int k, bool buy, unorde
                 TradeInfo pu;
                 TradeInfo pd;
                 if(prevStock != stock + 1)
-                    pu = task2_dp_topdown(A, i, k, false, memo, stock + 1, -1,-1);;
+                    pu = task2_dp_topdown(A, i, k, false, memo, stock + 1, -1,-1);
                 if(prevStock != stock - 1)
                     pd = task2_dp_topdown(A,i, k, false, memo, stock-1, -1, stock);
 
@@ -445,7 +454,7 @@ int stocks = A.size();
 
             }
         }
-        cout << dp[k][days-1] << endl;
+        //cout << dp[k][days-1] << endl;
 
     // Traversing the DP array to get the indices of stocks and buy and sell dates
         int x = k;
@@ -604,6 +613,92 @@ void task3_dp_bottomup(vector<vector<int>> A, int c){
 
 
 
+TradeInfo task3_dp_topdown(vector<vector<int>> A, int i, int c, bool buy, unordered_map<string, TradeInfo> &memo, int stock, int buyIndex, int prevStock) {
+       
+        if (i >= A[0].size() || stock >= A.size() || stock < 0){
+            TradeInfo a;
+            return a;
+        } 
+        //Unique key that holds all path/transaction possibilities
+        string key = to_string(i) + " " + to_string(buy) + " "+ to_string(stock);
+        if(memo.find(key) == memo.end()) {
+            TradeInfo profit = task3_dp_topdown(A, i + 1, c, buy, memo, stock, buyIndex,-1);
+            // If already holding a stock    
+            if (buy) {
+                TradeInfo ps = task3_dp_topdown(A, i+c+1, c, false, memo, stock, -1,-1);
+                TradeInfo pu = task3_dp_topdown(A, i+c+1, c, false, memo, stock + 1, -1,-1);
+                TradeInfo pd = task3_dp_topdown(A, i+c+1, c, false, memo, stock - 1, -1,-1);
+                TradeInfo temp  = compare(compare(ps, pu), pd);
+                temp.profit = temp.profit + A[stock][i];
+                temp.sellDay = i ;
+                profit = compare(profit, temp);
+            
+            // If we dont hold a stock
+            } else {
+
+                TradeInfo ps = task3_dp_topdown(A, i + 1, c, true, memo, stock, i,-1);
+                TradeInfo pu;
+                TradeInfo pd;
+                if(prevStock != stock + 1)
+                    pu = task3_dp_topdown(A, i, c, false, memo, stock + 1, -1,-1);
+                if(prevStock != stock - 1)
+                    pd = task3_dp_topdown(A,i, c, false, memo, stock-1, -1, stock);
+
+                ps.profit = ps.profit - A[stock][i];
+                ps.comb = to_string(stock+1) + " " + to_string(i+1) + " " + to_string(ps.sellDay+1) 
+                + ((ps.comb!="")?("\n"+ps.comb):"");
+                profit = compare(profit, ps);
+                profit = compare(profit, pu);
+                profit = compare(profit, pd);
+            }
+            // Store the value in DP(map) that can be used for subsequent calls
+            memo[key] = profit;
+        }
+        return memo[key];
+    }
+
+
+int task3_bottom_up_mn2(vector<vector<int>> A, int c, vector<vector<int>> &maxi, vector<vector<string>> &store) {
+
+        for(int s = 0; s < A.size(); ++s) {
+            maxi[0][0] = 0;
+            int t = A[s][1] - A[s][0];
+            if (t > maxi[1][0]) {
+                store[1][0] =  to_string(s) + " " + to_string(0) + " " + to_string(1);
+            }
+
+            maxi[1][0] = max(maxi[1][0], t);
+
+            for(int i = 2; i < A[0].size(); ++i) {
+                int temp = false;
+                string comb = "";
+                if (maxi[i - 1][0] > maxi[i][0]) {
+                    store[i][0] = store[i - 1][0];
+                }
+
+                maxi[i][0] = max(maxi[i][0], maxi[i - 1][0]);
+
+                for(int j = i - 1; j >= 0; --j) {
+                    t = A[s][i] - A[s][j];
+                    if (t > maxi[i][j]) {
+                        comb = to_string(s+1) + " " + to_string(j+1) + " " + to_string(i+1);
+                        store[i][j] = comb;
+                    }
+
+                    maxi[i][j] = max(t, maxi[i][j]);
+                    int prevIndex = j - (c + 1);
+                    if (maxi[i][j] + (prevIndex < 0 ? 0 : maxi[prevIndex][0]) > maxi[i][0]) {
+                        store[i][0] = store[i][j] + (prevIndex < 0 ? "" : (store[prevIndex][0] != "" ? "\n" + store[prevIndex][0] : ""));
+                    }
+
+                    maxi[i][0] = max(maxi[i][j] + (prevIndex < 0 ? 0 : maxi[prevIndex][0]), maxi[i][0]);
+                }
+            }
+        }
+        return maxi[A[0].size() - 1][0];
+    }
+
+
 int main(int argc, char **argv) {
     int m, n, k, c;
     string cmd;
@@ -728,8 +823,7 @@ int main(int argc, char **argv) {
     auto start = chrono::high_resolution_clock::now();
     unordered_map<string, TradeInfo> memo; 
     TradeInfo sol3 = task2_dp_topdown(A, 0, k, false, memo, 0, 0,-1);
-    cout << sol3.comb << endl;
-    cout << sol3.profit;
+    cout << sol3.comb;
     auto stop = chrono::high_resolution_clock::now();
     auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << endl << "Time taken: "
@@ -780,7 +874,11 @@ int main(int argc, char **argv) {
         }
     }
     auto start = chrono::high_resolution_clock::now();
-    task3_dp_bottomup(A,c);
+    vector<vector<int>> maxi(n, vector<int>(n));
+    vector<vector<string>> store(n, vector<string>(n));
+    int profit = task3_bottom_up_mn2(A, c, maxi, store);
+    //cout << profit << endl;
+    cout << store[A[0].size() - 1][0] << endl; 
     auto stop = chrono::high_resolution_clock::now();
     auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << endl << "Time taken: "
@@ -797,7 +895,9 @@ int main(int argc, char **argv) {
         }
     }
     auto start = chrono::high_resolution_clock::now();
-//    task3_dp_topdown(A,c);
+    unordered_map<string, TradeInfo> memo; 
+    TradeInfo sol3 = task3_dp_topdown(A, 0, c, false, memo, 0, 0,-1);
+    cout << sol3.comb;
     auto stop = chrono::high_resolution_clock::now();
     auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << endl << "Time taken: "
@@ -821,4 +921,4 @@ int main(int argc, char **argv) {
          << timeTaken.count() << " microseconds" << endl;
     }
 
-}
+}   

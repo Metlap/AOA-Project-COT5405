@@ -278,6 +278,52 @@ TradeInfo task2_dp_topdown(vector<vector<int>> A, int i, int k, bool buy, unorde
         return memo[key];
     }
 
+
+
+TradeInfo task3_dp_topdown(vector<vector<int>> A, int i, int c, bool buy, unordered_map<string, TradeInfo> &memo, int stock, int buyIndex, int prevStock) {
+        if (i >= A[0].size() || stock >= A.size() || stock < 0){
+            TradeInfo a;
+            return a;
+        } 
+        //Unique key that holds all path/transaction possibilities
+        string key = to_string(i) + " " +to_string(buy) + " "+ to_string(stock);
+        if(memo.find(key) == memo.end()) {
+            TradeInfo profit = task2_dp_topdown(A, i + 1, c, buy, memo, stock, buyIndex,-1);
+            // If already holding a stock    
+            if (buy) {
+                TradeInfo ps = task3_dp_topdown(A, i+c+1, c, false, memo, stock, -1,-1);
+                TradeInfo pu = task3_dp_topdown(A, i+c+1, c, false, memo, stock + 1, -1,-1);
+                TradeInfo pd = task3_dp_topdown(A, i+c+1, c, false, memo, stock - 1, -1,-1);
+                TradeInfo temp  = compare(compare(ps, pu), pd);
+                temp.profit = temp.profit + A[stock][i];
+                temp.sellDay = i ;
+                profit = compare(profit, temp);
+            
+            // If we dont hold a stock
+            } else {
+
+                TradeInfo ps = task3_dp_topdown(A, i + 1, c, true, memo, stock, i,-1);
+                TradeInfo pu;
+                TradeInfo pd;
+                if(prevStock != stock + 1)
+                    pu = task2_dp_topdown(A, i, c, false, memo, stock + 1, -1,-1);;
+                if(prevStock != stock - 1)
+                    pd = task2_dp_topdown(A,i, c, false, memo, stock-1, -1, stock);
+
+                ps.profit = ps.profit - A[stock][i];
+                ps.comb = to_string(stock+1) + " " + to_string(i+1) + " " + to_string(ps.sellDay+1) 
+                + ((ps.comb!="")?("\n"+ps.comb):"");
+                profit = compare(profit, ps);
+                profit = compare(profit, pu);
+                profit = compare(profit, pd);
+            }
+            // Store the value in DP(map) that can be used for subsequent calls
+            memo[key] = profit;
+        }
+        return memo[key];
+    }
+
+
 TradeInfo task2_bruteforce_recursive(vector<vector<int>> A, vector<vector<int>> &max, vector<vector<int>> &stockIndex, int n, int k, int currStock)  {
 
         if(k == 0)
@@ -363,8 +409,8 @@ int main(int argc, char **argv) {
     // cout<< "Enter m and n:";
     // cin >> m >> n;       
     m = 4;
-    n =8;
-    k =2;
+    n =4;
+    k =3;
     vector<vector<int>> A(m, vector<int>(n));
     // for (int i = 0; i < m; i++) {
     //     for (int j = 0; j < n; j++) {
@@ -372,38 +418,38 @@ int main(int argc, char **argv) {
     //     }
     // }
 
-    A = {{12, 14, 17, 10, 14, 13, 12, 15},   
-{100, 30, 15, 10, 8, 25, 80, 65},
-{125, 115, 100, 10, 85, 75, 65, 55},
-{10 ,22, 5 ,75 ,65 ,80 ,90, 102}};
+//     A = {{12, 14, 17, 10, 14, 13, 12, 15},   
+// {100, 30, 15, 10, 8, 25, 80, 65},
+// {125, 115, 100, 10, 85, 75, 65, 55},
+// {10 ,22, 5 ,75 ,65 ,80 ,90, 102}};
 
 // A = {{1,4,8} , {3,2,6}};
 
-// A = {{12, 14, 10, 9},
-// {100, 30, 15, 10},
-// {125, 115, 100, 10},
-// {100 ,22, 20, 21}};
+A = {{12, 14, 10, 9},
+{100, 30, 15, 10},
+{125, 115, 100, 10},
+{100 ,22, 20, 21}};
 
     // int cmd = stoi(argv[1]);
     // switch (cmd) {
     //     case 1:
-            //task2_dp_bottomup_optimized(A, k);
+         //   task2_dp_bottomup_optimized(A, k);
             // break;
         // case 2:
            // task2_dp_bottomup(A, k);
         //     break;
         // case 3:
 
-            // unordered_map<string, TradeInfo> memo; 
-            //     TradeInfo sol3 = task2_dp_topdown(A, 0, k, false, memo, 0, 0,-1);
-            //     cout << sol3.comb;
+            unordered_map<string, TradeInfo> memo; 
+                TradeInfo sol3 = task2_dp_topdown(A, 0, k, false, memo, 0, 0,-1);
+                cout << sol3.comb;
          //   break;
         // case 4:
-                vector<vector<int>> max(n, vector<int>(n));
-                vector<vector<int>> stockIndex(n, vector<int>(n));
-                TradeInfo sol3 = task2_bruteforce(A, max, stockIndex, k);
-                cout << sol3.comb;
-                cout << endl << sol3.profit;
+                // vector<vector<int>> max(n, vector<int>(n));
+                // vector<vector<int>> stockIndex(n, vector<int>(n));
+                // TradeInfo sol3 = task2_bruteforce(A, max, stockIndex, k);
+                // cout << sol3.comb;
+                // cout << endl << sol3.profit;
 
         //         System.out.println(profit.profit);
         // System.out.println(string.join("\n", profit.comb.split(",")));
