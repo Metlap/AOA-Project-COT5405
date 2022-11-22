@@ -90,42 +90,52 @@ for(int j = 0; j<m ; j++){
 
 
 // Problem 1 - TASK 3A - Top Down DP - Recursive Memoization
-string task1_topdown(vector<vector<int>> A, int m, int n, int max_diff, int max_right, int stock_index, int buy_day, int sell_day, int days_count, int max_right_index){
+int getmax_profit(vector<vector<int>> &dp, vector<vector<int>> &A, int m, int n)
+{
+    if(dp[m][n] == -1)
+    {
+        dp[m][n] = max(getmax_profit(dp,A,m,n-1)+A[m][n]-A[m][n-1],0);
+    }
+    return dp[m][n];
+}
 
-// End of recurssion for one stock cases
-    if(m<0)
+void task1_topdown(vector<vector<int>> &A, int m, int n)
+{
+    int max_profit = 0;
+    int stock_index = 0;
+    int buy_day = 0;
+    int sell_day = 0;
+    int buy_index = 0;
+    vector<vector<int>> dp(m, vector<int>(n, -1));
+    for(int i = 0; i < m; i++)
     {
-        if(max_diff >= 0)
-            cout<<stock_index+1<<" "<<buy_day+1<<" "<<sell_day+1;
-        else
-            cout<<m+2<<" "<<m+2<<" "<<m+2;  // printing the first stock of first index     
-       return "";     
+        dp[i][0]=0;
+        int value = getmax_profit(dp, A, i, n-1);
     }
-    else if(n<0)
+    
+    for(int i = 0 ; i < m ; i++)
     {
-            return task1_topdown(A, m-1, days_count, max_diff, 0, stock_index, buy_day, sell_day, days_count, days_count-1);
-    }
-    else
-    {
-            if (A[m][n] > max_right)
+        buy_index = 0;
+
+        for( int j = 1; j < n; j++)
+        {
+            if(dp[i][j]==0)
             {
-			    max_right = A[m][n];
-                max_right_index = n;
+                buy_index = j;
             }
-            else
-	    	{
-    			int diff = max_right - A[m][n];
+            if(dp[i][j]>max_profit)
+            {
 
-    			if(diff > max_diff)
-                {
-                    max_diff = diff;
-                    stock_index = m;
-                    buy_day = n;
-                    sell_day =  max_right_index;
-                }
+                max_profit = dp[i][j];
+                stock_index = i;
+                buy_day = buy_index;
+                sell_day = j;
             }
-       return task1_topdown(A, m, n-1, max_diff, max_right, stock_index, buy_day, sell_day, days_count, max_right_index);
+            
+        }
     }
+    cout<<stock_index+1<<" "<<buy_day+1<<" "<<sell_day+1;
+    //return max_profit;
 }
 
 // Problem 1 - TASK 3B - Bottom Up DP Solution
@@ -172,7 +182,7 @@ for(int j = 0; j<m ; j++){
         }
 
 }
-  cout << globalProfit << endl;
+  //cout << globalProfit << endl;
   cout << stockIndex  << " " << buyIndex+1 << " " << sellIndex+1;
 }
 
@@ -199,7 +209,7 @@ TradeInfo compare(TradeInfo a, TradeInfo b)
         return b;
     }
 
-// Problem -2 ALG-5 - Brute force - O(m * n^(2k))
+// Problem -2 ALG-4 - Brute force - O(m * n^(2k))
 TradeInfo task2_bruteforce_recursive(vector<vector<int>> A, vector<vector<int>> &max, vector<vector<int>> &stockIndex, int n, int k, int currStock)  {
 
         if(k == 0)
@@ -268,20 +278,22 @@ int stocks = A.size();
   
   // 2D DP array -> k+1*n+1 size
   vector<vector<int>> dp(k+1, vector<int> (days+1,-1));
-  //Arrays of k+1*n+1 size for storing the indices of stock, buy date and sell date
+  //Array of k+1*n+1 size for storing the indices of stock, buy date and sell date
   //for the n days and at most k transactions
-  vector<vector<int>> stockIndex(k+1, vector<int> (days+1,-1));
-  vector<vector<int>> buyIndex(k+1, vector<int> (days+1,-1));
-  vector<vector<int>> sellIndex(k+1, vector<int> (days+1,-1));
+  // tracker to keep which transactions yield maximum profit
+  vector<vector<string>> tracker(k+1, vector<string> (days + 1, ""));
 
         // Base case - for 0 transactions -> profit = 0
         for (int j = 0; j <= days; j++){
             dp[0][j] = 0;
+            tracker[0][j] = "";
         }
+
         //For day 0 -> no profit possible
         for (int i = 0; i <= k; i++){
             dp[i][0] = 0;
-        }    
+            tracker[i][0] = "";
+        }
 
         for (int i = 1; i <= k; i++) {
 
@@ -290,64 +302,46 @@ int stocks = A.size();
 
                 for (int j = 1; j < days; j++) {
 
-                    int buy = 0;
-                    int sell = 0;
-
                     int maxFactor = INT_MIN;
+
+                    string currentTransactions = "";
+
+                    //maintains index of buy day which yields maximum profit
+                    int prevMaxIndex = -1;
+
+                    //maintains transaction details for max profit incase of sell on jth day
+                    string maxComb = "";
 
                     // k-1 transactions till before selling at jth index. Hence kth transaction at jth index
                     for (int prev = 0; prev < j; prev++){
-                       if( maxFactor < (A[v][j] - A[v][prev] + dp[i - 1][prev])){
-                            maxFactor = (A[v][j] - A[v][prev] + dp[i - 1][prev]);
-                            buy = prev+1;
-                            sell = j+1;
+                       if( maxFactor < (- A[v][prev] + dp[i - 1][prev])){
+                            maxFactor = (- A[v][prev] + dp[i - 1][prev]);
+                            prevMaxIndex = prev;
+                            maxComb = tracker[i-1][prev];
                        }
                     }
-                  int temp =  maxFactor;
+
+                    // Adding current max yielding profit transaction to already computed max transactions
+                    currentTransactions = to_string(v+1) + " " +  to_string(prevMaxIndex+1)  + " " + to_string(j+1) + ((maxComb!="")?("\n"+maxComb):"") ;
+
                   // k transactions till j-1th day. Hence no sell operation on jth day
                   //Comparing which is larger to fill DP array and set values for back tracking
-                  if (maxFactor < dp[i][j - 1]){
+                  int temp =  maxFactor + A[v][j];
+                  if (temp < dp[i][j - 1]){
                     temp = dp[i][j - 1];
-                    sell = j;
+                    currentTransactions = tracker[i][j-1];
                   }
                   // Checking current profit with already filled value in DP. If greater fill with values corresponding to this transaction
                   if (temp > dp[i][j]){
                     dp[i][j] = temp;
-                    stockIndex[i][j] = v+1;
-                    sellIndex[i][j] = sell;
-                    buyIndex[i][j] = buy;
+                    tracker[i][j] = currentTransactions;
                   }
                 }
 
             }
         }
         //Maximum profit possible
-       // cout << dp[k][days-1] << endl;
-
-        // Traversing the DP array to get the indices of stocks and buy and sell dates
-        int x = k;
-        int y = days-1;
-        while(k>0 && y>0 && dp[x][y] >= 0){
-            
-            // Checking if diagonally left left or just left starting from rightmost bottom corner of DP array
-            while(dp[x][y-1] == dp[x][y]){
-                y--;  
-            }
-            int index = stockIndex[x][y];
-            int start = buyIndex[x][y];
-            int end = sellIndex[x][y];
-
-            if(y == buyIndex[x-1][y])
-                y--;    
-
-            // Updating new sell date to buy date (since problem solved for last transaction (last buy date till last sell date))
-            y = buyIndex[x][y];  
-
-            if(index >0 && start>0 && end > 0 )  
-            cout << index << " " << start << " " << end << " " << endl;
-            k--;
-            x = k;
-        }
+        cout << tracker[k][days-1] << endl;
 }
 
 
@@ -402,29 +396,38 @@ void task2_dp_bottomup_optimized(vector<vector<int>> A, int k){
 
 int days = A[0].size();
 int stocks = A.size();
-
+  
+  // 2D DP array -> k+1*n+1 size
   vector<vector<int>> dp(k+1, vector<int> (days+1,-1));
-  vector<vector<int>> stockIndex(k+1, vector<int> (days+1,-1));
-  vector<vector<int>> buyIndex(k+1, vector<int> (days+1,-1));
-  vector<vector<int>> sellIndex(k+1, vector<int> (days+1,-1));
+
+  //Array of k+1*n+1 size for storing the indices of stock, buy date and sell date
+  //for the n days and at most k transactions
+  // tracker to keep which transactions yield maximum profit
+  vector<vector<string>> tracker(k+1, vector<string> (days + 1, ""));
 
         for (int j = 0; j <= days; j++){
             dp[0][j] = 0;
+            tracker[0][j] = "";
         }
 
         for (int i = 0; i <= k; i++){
             dp[i][0] = 0;
+            tracker[i][0] = "";
         }    
 
         for (int i = 1; i <= k; i++) {
 
             for(int v = 0; v < stocks; v++) 
             {
-
                 int maxFactor = INT_MIN;
 
-                int buy = 0;
-                int sell = 0;
+                string currentTransactions = "";
+
+                //maintains index of buy day which yields maximum profit
+                int prevMaxIndex = -1;
+
+                //maintains transaction details for max profit incase of sell on jth day
+                string maxComb = "";
 
                 for (int j = 1; j < days; j++) {
 
@@ -432,187 +435,130 @@ int stocks = A.size();
 
                        if( maxFactor < ( - A[v][j-1] + dp[i - 1][j-1])){
                             maxFactor = ( - A[v][j-1] + dp[i - 1][j-1]);
-                            buy = j;
+                            prevMaxIndex = j-1;
+                            maxComb = tracker[i-1][j-1];
                        }
 
+                       // Adding current max yielding profit transaction to already computed max transactions
+                       currentTransactions = to_string(v+1) + " " +  to_string(prevMaxIndex+1)  + " " + to_string(j+1) + ((maxComb!="")?("\n"+maxComb):"") ;
+
+
+                  // k transactions till j-1th day. Hence no sell operation on jth day
+                  //Comparing which is larger to fill DP array and set values for back tracking
                   int temp =  maxFactor + A[v][j];
                   if (temp < dp[i][j - 1]){
                     temp = dp[i][j - 1];
-                    sell = j;
-                  }
-                  else {
-                    sell = j+1;
+                    currentTransactions = tracker[i][j-1];
                   }
 
+                  // Checking current profit with already filled value in DP. If greater fill with values corresponding to this transaction
                   if (temp > dp[i][j]){
                     dp[i][j] = temp;
-                    stockIndex[i][j] = v+1;
-                    sellIndex[i][j] = sell;
-                    buyIndex[i][j] = buy;
+                    tracker[i][j] = currentTransactions;
                   }
                 }
 
             }
         }
-        //cout << dp[k][days-1] << endl;
+        cout << tracker[k][days-1] << endl;
 
-    // Traversing the DP array to get the indices of stocks and buy and sell dates
-        int x = k;
-        int y = days-1;
-        while(k>0 && y>0 && dp[x][y] >= 0){
-
-            // Max val upto k transactions on day i is same as max value of k transactions upto day i-1
-            while(dp[x][y-1] == dp[x][y]){
-                y--;  
-            }
-
-            int index = stockIndex[x][y];
-            int start = buyIndex[x][y];
-            int end = sellIndex[x][y];
-
-        // Condn to skip checking the same subproblem again
-            if(y == buyIndex[x-1][y])
-                y--; 
- 
-            y = buyIndex[x][y];   
-            if(index >0 && start>0 && end > 0 )  
-            cout << index << " " << start << " " << end << " " << endl;
-            k--;
-            x = k;
-        }
 }
 
 
 //###############################################################################################################################################################################
 
-//PROBLEM 3 - ALG-8 - O(m * n^2 ) DP BottomUp Solution
 
-int find(vector<vector<int>> dp,vector<vector<int>> A,int index, int sellTime, int c){
-
-    //int sellVal = A[index][sellTime-1];
-    //int profit = dp[2*index+1][sellTime];
-    int buyTime = 0;
-    for (int i = sellTime-1; i>=0; i--){
-       if ( dp[2*index][i] == dp[2*index][sellTime]){
-        buyTime = i;
-        break;
-       } 
-    }
-
-   while(dp[2*index][buyTime-1] == dp[2*index][buyTime]){
-    buyTime = buyTime -1;
-}
-
-    return buyTime;
-}
-
-void task3_dp_bottomup(vector<vector<int>> A, int c){
-
-    int days = A[0].size();
-    int stocks = A.size();
-
-    // Three possibilities on a particular day -> buy, sell or do nothing(cooldown) 
-    //dp[1][i] -> already holds stock on day i -> so sell/ cooldown
-    // dp[0][i] -> doesnt hold stock on day i -> so buy/ cooldown 
-    vector<vector<int>> dp(2*stocks, vector<int> (days+1,-99999));
-    vector<vector<int>> stockIndex(stocks+1, vector<int>(days+1,-1));
-    vector<vector<int>> sellIndex(stocks+1, vector<int>(days+1,-1));
-
-    for (int j = 0; j < stocks; j++){
-
-        int buy = 1;
-        int sell = 1;
-
-        for(int i = 1; i<= days ; i++){
-
-            int temp = INT_MIN;
-            int sellTemp = INT_MIN;
-
-            if(i == 1){
-
-            // Buying on day 1
-            if (dp[(2*j) + 0][1] < -A[j][0]){
-                dp[(2*j) + 0][1] = -A[j][0];
-            }
-            dp[(2*j) + 1][1] = 0;
-            
-            }
-
-            else {
-
-                int buying = INT_MIN;
-
-                //cooldown value
-                temp =  dp[(2*j) + 0][i-1];
-
-                if(i-c-1 > 0)
-                    buying = dp[(2*j) + 1][i-c-1] - A[j][i-1];
-
-                if(temp < buying) {
-                    temp = buying;
-                    buy = i;
-                }
-
-                if(temp > dp[(2*j) + 0][i]){
-                    dp[(2*j) + 0][i] = temp;
-                }
-
-                int selling = INT_MIN;
-
-                // selling cooldown
-                sellTemp = dp[(2*j) + 1][i-1];
-                
-                if((i-1) >= 0)
-                    selling = dp[(2*j) + 0][i-1] + A[j][i-1];
-                
-                if(sellTemp < selling) {
-                    sellTemp = selling;
-                    sell = i;
-                }
-
-                if(sellTemp > dp[(2*j) + 1][i]){
-                    dp[(2*j) + 1][i] = sellTemp;
-                }
-            }
-
+// PROBLEM 3 - ALG- 7 - O(m * 2^n) - Brute Force Solution
+TradeInfo task3_brutefroce_recursive(bool brought, int i, int n, vector<int> A, int c, vector<TradeInfo> &optimal, int stock) {
+        if(i >= n){
+            TradeInfo a;
+            return a;
         }
 
-    }
+        TradeInfo profit = task3_brutefroce_recursive(brought, i+1, n, A, c, optimal, stock);
+        if(brought) {
+            TradeInfo temp = task3_brutefroce_recursive(false, i + c + 1, n, A, c, optimal, stock);
 
-    // Traversing the DP array to find the stocks and buy and sell indices/dates
-    int sellTime = days;
-    int buyTime = days;
-    int total =0;
-    while (sellTime > 0 && buyTime > 0 ){
-        int maxi = 0;
-        int index  = 0;
-        int y =sellTime;
-
-        for (int i = 0; i< stocks; i++){
-            if (dp[(2*i) +1][y] > maxi){
-            maxi = dp[2*i +1][y];
-            index = i;
-            }
+            temp.profit += A[i];
+            temp.sellDay = i;
+            profit = compare(profit, temp);
+            return profit;
         }
+        else {
+            TradeInfo ps = task3_brutefroce_recursive(true, i + 1, n, A, c, optimal, stock);
+            ps.profit = ps.profit - A[i];
+            ps.comb = to_string(stock+1) +  " " + to_string(i+1) +  " " + to_string(ps.sellDay+1) + ((ps.comb != "")?("\n"+ps.comb):"");
+            profit = compare(ps, profit);
+        
+        optimal[i] = compare(profit, optimal[i]);
+        return optimal[i];
 
-        while(dp[2*index +1][y-1] == dp[2*index +1][y]){
-            y = y-1;
-        }
-
-        total += maxi;
-        sellTime = y;
-        buyTime = find(dp, A,index,y, c);
-        cout << index+1 << " " << buyTime << " " << sellTime << " "<<endl;
-        sellTime = buyTime-c-1;
     }
-
-    cout<< endl;
-    cout<< "Total profit is : " << total;
-
 }
 
+    void task3_brutefroce(vector<vector<int>> A, int c) {
+        vector<TradeInfo> optimal(A[0].size());
+        // Initializing optimal array to store the TradeInfo Objects
+        TradeInfo a;
+        for(int i = 0; i < optimal.size(); i++){
+
+            optimal[i] = a;
+        }
+        TradeInfo profit;
+
+        //Each day buy/sell option for n days leads to 2^n time complexity
+        for(int j = 0; j < 2; j++) {
+            for (int i = 0; i < A.size(); i++)
+                profit = compare(profit, task3_brutefroce_recursive(false, 0, A[0].size(), A[i], c, optimal, i));
+        }
+        // cout << profit.profit << endl;
+        cout << profit.comb << endl;
+    }
 
 
+//PROBLEM 3 - TASK 8 - BottomUp O(m * n^2)
+int task3_bottom_up_mn2(vector<vector<int>> A, int c, vector<vector<int>> &maxi, vector<vector<string>> &store) {
+
+        for(int s = 0; s < A.size(); ++s) {
+            maxi[0][0] = 0;
+            int t = A[s][1] - A[s][0];
+            if (t > maxi[1][0]) {
+                store[1][0] =  to_string(s) + " " + to_string(0) + " " + to_string(1);
+            }
+
+            maxi[1][0] = max(maxi[1][0], t);
+
+            for(int i = 2; i < A[0].size(); ++i) {
+                int temp = false;
+                string comb = "";
+                if (maxi[i - 1][0] > maxi[i][0]) {
+                    store[i][0] = store[i - 1][0];
+                }
+
+                maxi[i][0] = max(maxi[i][0], maxi[i - 1][0]);
+
+                for(int j = i - 1; j >= 0; --j) {
+                    t = A[s][i] - A[s][j];
+                    if (t > maxi[i][j]) {
+                        comb = to_string(s+1) + " " + to_string(j+1) + " " + to_string(i+1);
+                        store[i][j] = comb;
+                    }
+
+                    maxi[i][j] = max(t, maxi[i][j]);
+                    int prevIndex = j - (c + 1);
+                    if (maxi[i][j] + (prevIndex < 0 ? 0 : maxi[prevIndex][0]) > maxi[i][0]) {
+                        store[i][0] = store[i][j] + (prevIndex < 0 ? "" : (store[prevIndex][0] != "" ? "\n" + store[prevIndex][0] : ""));
+                    }
+
+                    maxi[i][0] = max(maxi[i][j] + (prevIndex < 0 ? 0 : maxi[prevIndex][0]), maxi[i][0]);
+                }
+            }
+        }
+        return maxi[A[0].size() - 1][0];
+    }
+
+
+// PROBLEM 3 - TASK 9A - Memoization
 TradeInfo task3_dp_topdown(vector<vector<int>> A, int i, int c, bool buy, unordered_map<string, TradeInfo> &memo, int stock, int buyIndex, int prevStock) {
        
         if (i >= A[0].size() || stock >= A.size() || stock < 0){
@@ -657,46 +603,41 @@ TradeInfo task3_dp_topdown(vector<vector<int>> A, int i, int c, bool buy, unorde
         return memo[key];
     }
 
+// Problem -3 - TASK 9B - BottomUp 
+void task3_dp_bottomup_optimized(vector<vector<int>> A, int c) {
+        unordered_map<string, TradeInfo> dp;
 
-int task3_bottom_up_mn2(vector<vector<int>> A, int c, vector<vector<int>> &maxi, vector<vector<string>> &store) {
+        int m = A.size() ;
+        int n = A[0].size() ;
+        for(int i = n-1; i>=0; i--){
+            for(int v = 0; v<m; v++){
+                string bK = to_string(v) + " " +  to_string(i) + " " +  to_string(true);
+                string sK = to_string(v) + " " +  to_string(i) + " " +  to_string(false);
+                TradeInfo a;
+                TradeInfo skip = (dp.find(to_string(v) + " " +  to_string(i+1) + " " +  to_string(true)) != dp.end())?dp[to_string(v) + " " +  to_string(i+1) + " " +  to_string(true)]: a;
+                TradeInfo pu = (dp.find(to_string(v+1) + " " +  to_string(i+c+1) + " " +  to_string(false)) != dp.end())?dp[to_string(v+1) + " " +  to_string(i+c+1) + " " +  to_string(false)]: a;
+                TradeInfo ps = (dp.find(to_string(v) + " " +  to_string(i+c+1) + " " +  to_string(false)) != dp.end())?dp[to_string(v) + " " +  to_string(i+c+1) + " " +  to_string(false)]: a;
+                TradeInfo pd = (dp.find(to_string(v-1) + " " +  to_string(i+c+1) + " " +  to_string(false)) != dp.end())?dp[to_string(v-1) + " " +  to_string(i+c+1) + " " +  to_string(false)]: a;
+                TradeInfo temp = compare(compare(ps, pd), pu);
+                temp.sellDay = i;
+                temp.profit += A[v][i];
+                dp[bK] = compare(temp, skip);
 
-        for(int s = 0; s < A.size(); ++s) {
-            maxi[0][0] = 0;
-            int t = A[s][1] - A[s][0];
-            if (t > maxi[1][0]) {
-                store[1][0] =  to_string(s) + " " + to_string(0) + " " + to_string(1);
-            }
+                skip = (dp.find(to_string(v) + " " +  to_string(i+1) + " " +  to_string(false)) != dp.end())?dp[to_string(v) + " " +  to_string(i+1) + " " +  to_string(false)]: a;
+                ps = (dp.find(to_string(v) + " " +  to_string(i) + " " +  to_string(true)) != dp.end())?dp[to_string(v) + " " +  to_string(i) + " " +  to_string(true)]: a;
+                ps.profit += (-A[v][i]);
+                if(ps.sellDay != i)
+                ps.comb = to_string(v+1) + " " +  to_string(i+1) + " " +  to_string(ps.sellDay+1) + ((ps.comb != "")?("\n"+ps.comb):"");
 
-            maxi[1][0] = max(maxi[1][0], t);
+                pd = (dp.find(to_string(v-1) + " " +  to_string(i) + " " +  to_string(false)) != dp.end())?dp[to_string(v-1) + " " +  to_string(i) + " " +  to_string(false)]: a;
+                dp[sK] = compare(skip, compare(ps, pd));
 
-            for(int i = 2; i < A[0].size(); ++i) {
-                int temp = false;
-                string comb = "";
-                if (maxi[i - 1][0] > maxi[i][0]) {
-                    store[i][0] = store[i - 1][0];
-                }
-
-                maxi[i][0] = max(maxi[i][0], maxi[i - 1][0]);
-
-                for(int j = i - 1; j >= 0; --j) {
-                    t = A[s][i] - A[s][j];
-                    if (t > maxi[i][j]) {
-                        comb = to_string(s+1) + " " + to_string(j+1) + " " + to_string(i+1);
-                        store[i][j] = comb;
-                    }
-
-                    maxi[i][j] = max(t, maxi[i][j]);
-                    int prevIndex = j - (c + 1);
-                    if (maxi[i][j] + (prevIndex < 0 ? 0 : maxi[prevIndex][0]) > maxi[i][0]) {
-                        store[i][0] = store[i][j] + (prevIndex < 0 ? "" : (store[prevIndex][0] != "" ? "\n" + store[prevIndex][0] : ""));
-                    }
-
-                    maxi[i][0] = max(maxi[i][j] + (prevIndex < 0 ? 0 : maxi[prevIndex][0]), maxi[i][0]);
-                }
             }
         }
-        return maxi[A[0].size() - 1][0];
-    }
+
+        //cout << dp[to_string(m-1) + " " + to_string(0) + " " + to_string(false)].profit << endl;
+        cout << dp[to_string(m-1) + " " + to_string(0) + " " + to_string(false)].comb << endl;
+}
 
 
 int main(int argc, char **argv) {
@@ -748,7 +689,7 @@ int main(int argc, char **argv) {
         }
     }
     auto start = chrono::high_resolution_clock::now();
-    cout<<task1_topdown(A, m-1, n-1, -1, n-1, m-1, 0, 0, n-1, n-1);
+    task1_topdown(A, m, n);
     auto stop = chrono::high_resolution_clock::now();
     auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << endl << "Time taken: "
@@ -857,7 +798,10 @@ int main(int argc, char **argv) {
         }
     }
     auto start = chrono::high_resolution_clock::now();
-//    task3_bruteforce(A,c);
+    // unordered_map<string, TradeInfo> memo; 
+    // TradeInfo sol3 = task3_brutefroce(A, 0, c, false, memo, 0, 0,-1);
+    // cout << sol3.comb;
+    task3_brutefroce(A, c);
     auto stop = chrono::high_resolution_clock::now();
     auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << endl << "Time taken: "
@@ -914,11 +858,11 @@ int main(int argc, char **argv) {
         }
     }
     auto start = chrono::high_resolution_clock::now();
-//    task3_dp_bottomup_optimized(A,c);
+    task3_dp_bottomup_optimized(A,c);
     auto stop = chrono::high_resolution_clock::now();
     auto timeTaken = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << endl << "Time taken: "
          << timeTaken.count() << " microseconds" << endl;
     }
 
-}   
+}
