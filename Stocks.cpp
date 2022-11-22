@@ -8,16 +8,19 @@ int n = A[0].size();
 int m = A.size();
 int stock_index = 0, buy_day = 0, sell_day = 0;
 int i,j,k;
+//Variable to hold max profit value among all stocks for all possible days
 int max_diff = -1;
 
+//Iterate over all stocks
  for (i = 0; i < m; i++) 
     {
+        // Checking the profit value for each buy and sell day
         for (j = 0; j < n; j++) 
         {   
             for (k = j+1; k < n; k++) 
             {
                if (A[i][k] - A[i][j] > max_diff)
-                {
+                {   //Updating indices for max transaction
                     max_diff = A[i][k]  - A[i][j] ;
                     stock_index = i;
                     buy_day = j;
